@@ -23,10 +23,12 @@ module.exports = {
       const valorBRL = await getBitcoinBrl();
       
        //EXIBIÇÃO DO BOT
-      message.reply(":money_with_wings:  **Preço Atualizado do Bitcoin** :money_with_wings: \n\n" +
-        `:flag_br: **BRL:** R$ ${valorBRL}\n` +
-        `:flag_us: **USD:** $ ${valorUSDT}\n\n` +
-        "_*Os valores são baseados nas taxas mais recentes da Binance._");
+       message.reply(
+        "📢 **Preço Atualizado do Bitcoin** 🚀\n\n" +
+        `:flag_br: **BRL:** \`R$ ${valorBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\`\n` +
+        `:flag_us: **USD:** \`$ ${valorUSDT.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\`\n\n` +
+        "📊_*Os valores são baseados nas taxas mais recentes da Binance._"
+      );      
     }
     sendMessage();
   }
