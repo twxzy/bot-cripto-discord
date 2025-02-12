@@ -1,7 +1,6 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Collection } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
+const { Client, GatewayIntentBits } = require('discord.js');
+const fetch = require('node-fetch'); // Para fazer a requisição ao preço do BTC
 
 const client = new Client({
     intents: [
@@ -11,19 +10,61 @@ const client = new Client({
     ]
 });
 
-// Criar coleção de comandos
-client.commands = new Collection();
-
-// Carregar automaticamente todos os comandos da pasta "commands"
-const commandFiles = fs.readdirSync(path.join(__dirname, 'commands')).filter(file => file.endsWith('.js'));
-
-for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
-    client.commands.set(command.name, command);
-}
-
 client.once('ready', () => {
     console.log(`✅ Bot ${client.user.tag} está online!`);
+
+    // Canal onde as mensagens serão enviadas
+    const channelID = '1337277040771989556'; // Substitua pelo ID do canal desejado
+    const channel = client.channels.cache.get(channelID);
+
+    if (!channel) {
+        console.error("Canal não encontrado. Verifique o ID do canal.");
+        return;
+    }
+
+    // Função que busca o preço do BTC em USDT e BRL e envia para o canal
+    async function fetchBTCPrice() {
+        try {
+            // Buscando o preço em USDT
+            const responseUSDT = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT");
+            const dataUSDT = await responseUSDT.json();
+
+            // Buscando o preço em BRL
+            const responseBRL = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCBRL");
+            const dataBRL = await responseBRL.json();
+
+            if (dataUSDT.price && dataBRL.price) {
+                const priceUSDT = parseFloat(dataUSDT.price).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+
+                const priceBRL = parseFloat(dataBRL.price).toLocaleString("pt-BR", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+
+                // Envia os preços do BTC em USDT e BRL para o canal
+                channel.send(
+                    `@everyone\n\n` +
+                    `📢 **Preço Atualizado do Bitcoin** 🚀\n\n` +
+                    `:flag_br: **BRL:** \`R$ ${priceBRL}\`\n` +
+                    `:flag_us: **USD:** \`$ ${priceUSDT}\`\n\n` +
+                    "📊_*Os valores são baseados nas taxas mais recentes da Binance._"
+                );
+            } else {
+                console.error("Erro ao buscar os preços do BTC.");
+            }
+        } catch (error) {
+            console.error("Erro ao acessar a API da Binance:", error);
+        }
+    }
+
+    // Envia o primeiro alerta assim que o bot for online
+    fetchBTCPrice();
+
+    // Envia alertas a cada 1 hora (3600000 ms)
+    setInterval(fetchBTCPrice, 3600000); // 1 hora
 });
 
 client.on('messageCreate', (message) => {
